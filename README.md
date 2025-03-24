@@ -8,12 +8,14 @@
   >
   > Ka/Ks:非同义替换没有改变蛋白质的组成，因此不受自然选择的影响(忽略密码子偏好性)，那么 Ks 就能反映进化过程的背景碱基替换率。Ka/Ks 的比值就能说明这个基因是受到了何种选择。
 
-- 算法模型：
-  > 近似法：
+- 选择压力
+  > 正选择：Ka/Ks>>1，基因受到正选择，在快速进化中得以保留，造成进化上的优势
   >
-  > 最大似然法：利用概率论完成近似法的三步骤。
+  > 中性选择：Ka/Ks=1，基因中性进化
   >
-  > 计数法：
+  > 负选择/纯化选择：Ka/Ks<<1，基因受到负选择，选择消除有害突变
+
+参考：(https://blog.csdn.net/qq_36608036/article/details/131557801)
 
 ## 0 软件
 
@@ -139,11 +141,11 @@ for level in complete_taxon complete_untaxon; do
 
 ## 3 提取整理 antismash 预测结果
 
-从`region.html`中`overview`表格中提取预测结果，并从中提取产物信息，再筛选目标产物polymyxin
+从`region.html`中`overview`表格中提取预测结果，并从中提取产物信息，再筛选目标产物 polymyxin
 
 ### 3.1 统计 strain
 
-先统计使用antismash预测的菌株名称，得到tsv文件
+先统计使用 antismash 预测的菌株名称，得到 tsv 文件
 
 ```shell
 cd ~/chenxy/Pae_rerun/result
@@ -164,7 +166,7 @@ done
 
 - **基于 overview-table 得到所有产物信息**
 
-从`region.html`文件中提取`overview`表格的html信息，得到每个菌株的原始文件`raw.tsv`，并修改其格式（调整到与html界面中overview table一致）。最终得到所有菌株的全部产物信息
+从`region.html`文件中提取`overview`表格的 html 信息，得到每个菌株的原始文件`raw.tsv`，并修改其格式（调整到与 html 界面中 overview table 一致）。最终得到所有菌株的全部产物信息
 
 ```shell
 # 得到overview的raw文件
@@ -213,7 +215,7 @@ done
 
 - 提取 overview 表格中产物的 mibig 信息
 
-从`region.html`文件中提取`overview`表格中提取预测产物的mibig参考信息，即MIBiG数据库中BGC编号
+从`region.html`文件中提取`overview`表格中提取预测产物的 mibig 参考信息，即 MIBiG 数据库中 BGC 编号
 
 ```shell
 cd ~/chenxy/Pae_rerun/result
@@ -244,7 +246,7 @@ done
 
 - 统计 mibig 数据库中 polymyxin 参考序列
 
-下载MIBiG数据库序列，并统计其中有关目标产物polymyxin的序列
+下载 MIBiG 数据库序列，并统计其中有关目标产物 polymyxin 的序列
 
 ```shell
 cd ~/chenxy/Pae_rerun/result
@@ -270,7 +272,7 @@ cat mibig/mibig.tsv |
 
 - 基于 overview 和 mibig 信息筛选产物 polymyxin
 
-合并overview文件和mibig文件，筛选预测相似度高于50%部分，并筛选预测产物为polymyxin的。再将筛选到的菌株的antismash结果拷贝过来
+合并 overview 文件和 mibig 文件，筛选预测相似度高于 50%部分，并筛选预测产物为 polymyxin 的。再将筛选到的菌株的 antismash 结果拷贝过来
 
 ```shell
 # 合并所有对应的 BGCs的预测产物overview信息和 MiBIG参考信息
@@ -307,7 +309,8 @@ for level in complete_taxon complete_untaxon; do
 done
 ```
 
-从筛选到polymyxin的结果文件中选择部分菌株作为**example**进行后续分析：
+从筛选到 polymyxin 的结果文件中选择部分菌株作为**example**进行后续分析：
+
 ```
 example_polymyxin_complete_taxon_7.1.tsv文件内菌株
 
@@ -326,16 +329,16 @@ Paenib_thi_SY20_GCF_028226775_1	cluster17
 Paenib_xylane_PAMC_22703_GCF_001908275_1	cluster16
 ```
 
-## 4 从 antismash 结果提取 domain序列
+## 4 从 antismash 结果提取 domain 序列
 
-提取思路：antismash结果目录中，`region.js`存储了相关信息。详见[antismash解读](https://github.com/osmanthus77/something/blob/main/antismash.md)
+提取思路：antismash 结果目录中，`region.js`存储了相关信息。详见[antismash 解读](https://github.com/osmanthus77/something/blob/main/antismash.md)
 
-在`region.js`文件中，从`details_data`中解析`nrpspks`数据，遍历每个`orfs`和`domains`，从中提取出domain的polymyxin对应的菌株bgc的全部domain信息
+在`region.js`文件中，从`details_data`中解析`nrpspks`数据，遍历每个`orfs`和`domains`，从中提取出 domain 的 polymyxin 对应的菌株 bgc 的全部 domain 信息
 
 `details_data`部分内容如图：
 ![regions_js_picture](/pic/regions_js.png "regions_js")
 
-- 提取 domain DNA序列
+- 提取 domain DNA 序列
 
 ```shell
 # 修改第二列格式
@@ -361,18 +364,19 @@ for i in $(cat product/example_polymyxin.tsv | sed "s/\t/,/g"); do
 done
 ```
 
-提取domain后`txt`文件修改格式并筛选特定的domain，以C域为例；
+提取 domain 后`txt`文件修改格式并筛选特定的 domain，以 C 域为例；
+
 ```shell
 cd ~/chenxy/Pae_rerun/result
-cat domain/domain_all_pylymyxin_complete_plasmid_panenbacillus.txt | 
-sed "s/\[//g" | sed "s/\]//g"|sed "s/'//g" | sed "s/,/\n/g"| 
+cat domain/domain_all_pylymyxin_complete_plasmid_panenbacillus.txt |
+sed "s/\[//g" | sed "s/\]//g"|sed "s/'//g" | sed "s/,/\n/g"|
 grep -E "Condensation" |       # 筛选特定domain
 sed "s/ >//g" | sed "s/+/\t/g" |
 sed "s/^/>/g" |
 sed "s/\t/\n/g" > domain/domain_Cy.txt
 ```
 
-- 提取polymyxin的底物氨基酸
+- 提取 polymyxin 的底物氨基酸
 
 ```shell
 cd ~/chenxy/Pae_rerun/result
@@ -395,7 +399,6 @@ for level in complete_taxon complete_untaxon; do
     done
 done
 ```
-
 
 ## 比对构树
 
