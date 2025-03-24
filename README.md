@@ -328,11 +328,14 @@ Paenib_xylane_PAMC_22703_GCF_001908275_1	cluster16
 
 ## 4 从 antismash 结果提取 domain序列
 
-- 提取 domain DNA序列
-
 提取思路：antismash结果目录中，`region.js`存储了相关信息。详见[antismash解读](https://github.com/osmanthus77/something/blob/main/antismash.md)
 
 在`region.js`文件中，从`details_data`中解析`nrpspks`数据，遍历每个`orfs`和`domains`，从中提取出domain的polymyxin对应的菌株bgc的全部domain信息
+
+`details_data`部分内容如图：
+![regions_js_picture](/pic/regions_js.png "regions_js")
+
+- 提取 domain DNA序列
 
 ```shell
 # 修改第二列格式
