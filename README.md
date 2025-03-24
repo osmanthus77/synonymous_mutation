@@ -120,7 +120,7 @@ ParaAT.pl -h test.homologs -n test.cds -a test.pep -p proc -m mafft -f axt -g -k
 
 ## 1 下载数据
 
-根据(https://github.com/wang-q/genomes/blob/main/groups/Bacillus.md#species-with-assemblies)下载得到类芽孢杆菌Paenibacillaceae基因组序列(genbank文件)，分为有species分类和无species分类，分别为complete_taxon、complete_untaxon
+根据(https://github.com/wang-q/genomes/blob/main/groups/Bacillus.md#species-with-assemblies) 下载得到类芽孢杆菌Paenibacillaceae基因组序列(genbank文件)，分为有species分类和无species分类，分别为complete_taxon、complete_untaxon
 
 ## 2 运行 antismash 预测
 
