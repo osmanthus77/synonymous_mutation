@@ -584,7 +584,7 @@ fasttree -nt tree/domain_Cdna.trim.fa > tree/fasttree/domain_Cdna.nwk
 合并具有相同拓扑结构的子树，减少树的复杂度
 
 ```shell
-nw_condense tree/fasttree/
+nw_condense tree/fasttree/domain_Cdna.nwk > tree/fasttree/domain_Cdna.condense.nwk
 ```
 #### 可视化
 使用`table2itol`脚本进行可视化
