@@ -69,6 +69,64 @@ conda activate antismash
 antismash my_input.gbk
 ```
 
+### 序列比对工具
+
+使用`Homebrew`安装。[homebrew 官网及安装](https://brew.sh)
+
+#### mafft v7.526
+
+```shell
+brew install mafft
+```
+
+#### muscle v5.1.0
+
+```shell
+brew install muscle
+```
+
+ps:mafft 比 muscle 运行速度慢，但准确性更高
+
+### 比对结果修剪——trimal v1.4.1
+
+```shell
+brew install triaml
+```
+
+### 构树工具
+
+#### fasttree v2.1.11
+
+```shell
+brew install fasttree
+```
+
+### iqtree v1.6.12
+
+```shell
+brew install iqtree
+```
+
+ps：iqtree 比 fasttree 运行慢，但更加准确
+
+### newick-utils
+
+对系统发育树进行处理和可视化的工具
+
+```shell
+brew install newick-utils
+```
+
+### 树的可视化
+
+table2itol 脚本，[参考链接](https://www.jianshu.com/p/684b83a5e844)
+
+```shell
+git clone https://github.com/mgoeker/table2itol.git
+chmod +x table2itol.R
+./table2itol.R
+```
+
 ### KaKs_Calculator v3.0
 
 [下载地址](https://github.com/Chenglin20170390/KaKs_Calculator-3.0.git)
@@ -120,13 +178,14 @@ ParaAT.pl -h test.homologs -n test.cds -a test.pep -p proc -m mafft -f axt -g -k
 
 ## 1 下载数据
 
-根据 https://github.com/wang-q/genomes/blob/main/groups/Bacillus.md#species-with-assemblies 下载得到类芽孢杆菌Paenibacillaceae基因组序列(genbank文件)，分为有species分类和无species分类，分别为complete_taxon、complete_untaxon
+根据 https://github.com/wang-q/genomes/blob/main/groups/Bacillus.md#species-with-assemblies 下载得到类芽孢杆菌 Paenibacillaceae 基因组序列(genbank 文件)，分为有 species 分类和无 species 分类，分别为 complete_taxon、complete_untaxon
 
 ## 2 运行 antismash 预测
 
 ### 2.1 使用 antismash 注释预测
 
 ```shell
+mkdir ~/chenxy/Pae_rerun
 cd ~/chenxy/Pae_rerun
 for level in complete_taxon complete_untaxon; do
     mkdir -p antismas_out/bgc_7.1/Paenibacillaceae/${level}
@@ -253,7 +312,7 @@ cd ~/chenxy/Pae_rerun/result
 mkdir -p mibig/mibig
 wget https://dl.secondarymetabolites.org/mibig/mibig_json_4.0.tar.gz -O mibig/MIBIG4_4.0.tar.gz
 tar -xvf mibig/MIBIG4_4.0.tar.gz -C mibig/mibig  --strip-components 1
-ls mibig/mibig | cut -d "." -f 1 >mibig/mibig.tsv
+ls mibig/mibig | cut -d "." -f 1 > mibig/mibig.tsv
 wc -l mibig/mibig.tsv   #3013
 
 # 统计其中有关polymyxin的序列
@@ -338,7 +397,7 @@ Paenib_xylane_PAMC_22703_GCF_001908275_1	cluster16
 `details_data`部分内容如图：
 ![regions_js_picture](/pic/regions_js.png "regions_js")
 
-- 提取 domain DNA 序列
+### 4.1 提取 domain DNA 序列
 
 ```shell
 # 修改第二列格式
@@ -352,7 +411,7 @@ head product/example_polymyxin_complete_taxon_7.1.tsv
 # Paenib_dendri_J27TS7_GCF_021654795_1	r1c16
 
 # 提取全部 domain
-mkdir -p domain
+mkdir -p domain_dna
 for i in $(cat product/example_polymyxin.tsv | sed "s/\t/,/g"); do
     echo ${i};
     sample=$(echo ${i} | cut -d "," -f 1);
@@ -360,20 +419,60 @@ for i in $(cat product/example_polymyxin.tsv | sed "s/\t/,/g"); do
     echo ${num};
     js="product/polymyxin_complete_taxon_7.1/${sample}/regions.js";
     type=$(python ../script/antismash_pp_for_complete_uncomplete.py "${js}" "${num}" "${sample}");
-    echo ${type} | sed "s/]/]\n/g" >> domain/domain_all_pylymyxin_complete_plasmid_panenbacillus.txt;
+    echo ${type} | sed "s/]/]\n/g" >> domain_dna/domain_dna_all_polymyxin_complete_plasmid_panenbacillus.txt;
 done
 ```
 
 提取 domain 后`txt`文件修改格式并筛选特定的 domain，以 C 域为例；
+！注意：筛选特定 domain 时，要用 domain 全称，如下表
+| domain 简称 | domain 全称 |
+|:----------:|--------------|
+| A domain | AMP-binding |
+| C domain | Condensation |
+| T domain | PCP |
 
 ```shell
 cd ~/chenxy/Pae_rerun/result
-cat domain/domain_all_pylymyxin_complete_plasmid_panenbacillus.txt |
+cat domain_dna/domain_dna_all_polymyxin_complete_plasmid_panenbacillus.txt |
 sed "s/\[//g" | sed "s/\]//g"|sed "s/'//g" | sed "s/,/\n/g"|
 grep -E "Condensation" |       # 筛选特定domain
 sed "s/ >//g" | sed "s/+/\t/g" |
 sed "s/^/>/g" |
-sed "s/\t/\n/g" > domain/domain_Cy.txt
+sed "s/\t/\n/g" > domain_dna/domain_Cdna.txt
+# 每个菌株第一行 >> 替换为 >
+sed "s/^>>/>/g" domain_dna/domain_Cdna.txt > temp.txt && mv temp.txt domain_dna/domain_Cdna.txt
+sed "s/^>>/>/g" domain_dna/domain_Adna.txt > temp.txt && mv temp.txt domain_dna/domain_Adna.txt
+sed "s/^>>/>/g" domain_dna/domain_Tdna.txt > temp.txt && mv temp.txt domain_dna/domain_Tdna.txt
+```
+
+### 4.2 提取 domain 氨基酸序列
+
+方法同`4.1`，将`antismash_pp_for_complete_uncomplete.py`脚本中 dna_sequence 替换为 sequence，即为氨基酸序列。
+
+```shell
+# 提取domain 氨基酸序列
+mkdir -p domain_aa
+for i in $(cat product/example_polymyxin.tsv | sed "s/\t/,/g"); do
+    echo ${i};
+    sample=$(echo ${i} | cut -d "," -f 1);
+    num=$(echo ${i} | cut -d "," -f 2);
+    echo ${num};
+    js="product/polymyxin_complete_taxon_7.1/${sample}/regions.js";
+    type=$(python ../script/antismash_aa_for_complete_uncomplete.py "${js}" "${num}" "${sample}");
+    echo ${type} | sed "s/]/]\n/g" >> domain_aa/domain_aa_all_polymyxin_complete_plasmid_panenbacillus.txt;
+done
+
+# 修改格式并筛选特定 domain，以C域为例
+cat domain_aa/domain_aa_all_polymyxin_complete_plasmid_panenbacillus.txt |
+sed "s/\[//g" | sed "s/\]//g"|sed "s/'//g" | sed "s/,/\n/g"|
+grep -E "Condensation" |       # 筛选特定domain
+sed "s/ >//g" | sed "s/+/\t/g" |
+sed "s/^/>/g" |
+sed "s/\t/\n/g" > domain_aa/domain_Caa.txt
+# 每个菌株第一行 >> 替换为 >
+sed "s/^>>/>/g" domain_aa/domain_Caa.txt > temp.txt && mv temp.txt domain_aa/domain_Caa.txt
+sed "s/^>>/>/g" domain_aa/domain_Aaa.txt > temp.txt && mv temp.txt domain_aa/domain_Aaa.txt
+sed "s/^>>/>/g" domain_aa/domain_Taa.txt > temp.txt && mv temp.txt domain_aa/domain_Taa.txt
 ```
 
 - 提取 polymyxin 的底物氨基酸
@@ -400,6 +499,100 @@ for level in complete_taxon complete_untaxon; do
 done
 ```
 
-## 比对构树
+## 5 比对构树
+
+### 5.1 多序列比对
+
+多序列比对（Multiple sequence alignment, MSA）：将多条有系统进化关系的氨基酸序列 or 核酸序列进行比对，把相同的碱基 or 氨基酸残基排在同一列上——对齐。做序列对齐的主要目的是，确定所有序列的同源位点相互对应。
+
+```shell
+cd ~/chenxy/Pae_rerun/result
+mkdir tree
+mafft --auto domain_dna/domain_Cdna.txt > tree/domain_Cdna.aln.fa
+```
+
+`--auto`选项：自动选择比对模式为高速模式 or 高精度模式。高精度适用于少于约 200 个序列 x 每个序列少于约 2000 个氨基酸/核苷酸。
+
+### 5.2 多序列比对结果修剪
+
+目前存在各种各样的多序列比对算法，但是不存在一个算法能够绝对地保证其能进行完美的位点对应。此外，用于比对的序列可能存在一些错误或者删除和缺失。所以，在得到多序列比对结果之后，用于进化树构建之前，对多序列比对结果进行修剪。
+
+- 修剪操作：
+
+  > 人工修剪
+  >
+  > 删除所有含有 gaps 的位点
+  >
+  > 删除不保守位点，如 G-blocks 软件
+  >
+  > 删除含有一定比例的 gaps 的位点，如 MEGA 内置算法
+  >
+  > 按照位点信息量删除，如 trimAL
+
+- trimal 用法：
+
+```shell
+trimal -in <input> -out <output> -[option]
+```
+
+常用 option：`-automated1`自动选择最优修剪方式，优化用于最大似然法构树
+
+一般使用`trimAL`进行修剪:
+
+```shell
+cd ~/chenxy/Pae_rerun/result
+trimal -in tree/domain_Cdna.aln.fa -out tree/domain_Cdna.trim.fa -automated1
+```
+
+### 5.3 构树
+
+- 系统发育树分为有根树、无根树
+  > 无根树只反应分类单元之间的距离、无祖先问题
+  >
+  > 有根树反映进化时间顺序，树枝长度可以反应不同基因/蛋白进化方式和进化速率
+- 常见算法：
+  > 最大似然法(Maximum Likelihood, ML)
+  >
+  > 邻接法(Neighbor-Joining, NJ)
+  >
+  > 最大简约法(Maximum Parsimony, MP)
+  >
+  > 最小进化法(Minimum Evolution, ME)
+  >
+  > 贝叶斯推断(Bayesian)
+  >
+  > 非加权分组平均法(UPGMA)
+
+一般用最大似然法即可，贝叶斯法最准确，但运行速度最慢。  
+常用工具：iqtree、fasttree，fasttree 适合快速构树，iqtree 准确性更高。  
+详见 https://github.com/osmanthus77/something/blob/main/record.md 中 iqtree 和 fasttree 部分。
+
+这里，使用`fasttree`构树
+
+```shell
+cd cd ~/chenxy/Pae_rerun/result
+mkdir -p tree/fasttree
+fasttree -nt tree/domain_Cdna.trim.fa > tree/fasttree/domain_Cdna.nwk
+```
+
+注：`-nt`指定核酸序列，默认为蛋白。
+
+### 5.4 对树操作
+
+#### 简化树
+
+合并具有相同拓扑结构的子树，减少树的复杂度
+
+```shell
+nw_condense tree/fasttree/
+```
+#### 可视化
+使用`table2itol`脚本进行可视化
+```shell
+cd cd ~/chenxy/Pae_rerun/result
+cat domain_dna/domain_Cdna.txt | grep ">" | sed "s/^>//g" > domain_dna/domain_Cdna_strain.txt
+
+```
+
 
 ## Ka/Ks 计算
