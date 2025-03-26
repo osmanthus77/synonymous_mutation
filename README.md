@@ -17,9 +17,9 @@
 
 参考：https://blog.csdn.net/qq_36608036/article/details/131557801
 
-## 0 软件
+## 0 软件安装
 
-### antismash v7.1.0
+### 0.1 antismash v7.1.0
 
 - 安装`conda`
 
@@ -69,7 +69,7 @@ conda activate antismash
 antismash my_input.gbk
 ```
 
-### 序列比对工具
+### 0.2 序列比对工具
 
 使用`Homebrew`安装。[homebrew 官网及安装](https://brew.sh)
 
@@ -87,13 +87,13 @@ brew install muscle
 
 ps:mafft 比 muscle 运行速度慢，但准确性更高
 
-### 比对结果修剪——trimal v1.4.1
+### 0.3 比对结果修剪——trimal v1.4.1
 
 ```shell
 brew install triaml
 ```
 
-### 构树工具
+### 0.4 构树工具
 
 #### fasttree v2.1.11
 
@@ -109,7 +109,7 @@ brew install iqtree
 
 ps：iqtree 比 fasttree 运行慢，但更加准确
 
-### newick-utils
+### 0.5 newick-utils
 
 对系统发育树进行处理和可视化的工具
 
@@ -117,7 +117,7 @@ ps：iqtree 比 fasttree 运行慢，但更加准确
 brew install newick-utils
 ```
 
-### 树的可视化
+### 0.6 树的可视化
 
 table2itol 脚本，[参考链接](https://www.jianshu.com/p/684b83a5e844)
 
@@ -127,7 +127,7 @@ chmod +x table2itol.R
 ./table2itol.R
 ```
 
-### KaKs_Calculator v3.0
+### 0.7 KaKs_Calculator v3.0
 
 [下载地址](https://github.com/Chenglin20170390/KaKs_Calculator-3.0.git)
 
@@ -140,7 +140,7 @@ echo 'export PATH=$HOME/biosoft/KaKs_Calculator-3.0/bin:$PATH'  >> $HOME/.bashrc
 source ~/.bashrc
 ```
 
-### ParaAT v2.0
+### 0.8 ParaAT v2.0
 
 整合了计算 KaKs 所需的一整套分析，包括蛋白序列比对、根据比对结果回译成 codon 对应的核酸比对结果、计算 KaKs 值（使用 KaKs_Calculator）  
 [下载地址 1](https://ngdc.cncb.ac.cn/tools/paraat)  
@@ -149,6 +149,7 @@ source ~/.bashrc
 ```shell
 # 解压
 unzip ParaAT2.0.tar.gz
+# 设置环境变量，后续可直接作为命令使用
 echo 'export PATH=$HOME/biosoft/ParaAT2.0:$PATH'  >> $HOME/.bashrc
 source ~/.bashrc
 
@@ -628,9 +629,9 @@ head -n 3 domain_dna/domain_Cdna_annotation_header.txt
 ```
 
 - 重新建树
-由于注释过程中，存在部分菌株 bgc 中预测的 polymyxin 的 nrps 基因多于 mibig 库中，在手动注释时删除这部分内容，如下图：
-![zhushishanchu](/pic/注释删除.png "zhushishanchu")
-图中，`Query`部分为菌株 bgc 与 mibig 数据库中已知 nrps 基因比对，其中有灰色线条连接部分才是菌株 bgc 中有关 polymyxin 的 nprs 基因，但在`4.1`的提取过程中左边三个无关的红色基因同样也提取出来了，因此需要删除这部分 C 域的序列后重新建树。
+  由于注释过程中，存在部分菌株 bgc 中预测的 polymyxin 的 nrps 基因多于 mibig 库中，在手动注释时删除这部分内容，如下图：
+  ![zhushishanchu](/pic/注释删除.png "zhushishanchu")
+  图中，`Query`部分为菌株 bgc 与 mibig 数据库中已知 nrps 基因比对，其中有灰色线条连接部分才是菌株 bgc 中有关 polymyxin 的 nprs 基因，但在`4.1`的提取过程中左边三个无关的红色基因同样也提取出来了，因此需要删除这部分 C 域的序列后重新建树。
 
 ```shell
 # 删除得到正确的Cdomain 序列
@@ -639,6 +640,12 @@ cut -f 1 domain_dna/domain_Cdna_annotation.txt > domain_dna/tmp.txt
 grep -A 1 -f domain_dna/tmp.txt domain_dna/domain_Cdna.txt > domain_dna/domain_Cdna_new.txt
 sed -e "s/--//g" -e "/^$/d" domain_dna/domain_Cdna_new.txt > domain_dna/temp.txt && mv domain_dna/temp.txt domain_dna/domain_Cdna_new.txt
 rm domain_dna/tmp.txt
+
+faops size domain_dna/domain_Cdna.txt | wc -l
+# 132
+faops size domain_dna/domain_Cdna_new.txt | wc -l
+# 121
+# 序列数量减少，确认删除成功
 
 # 重新建树
 mafft --auto domain_dna/domain_Cdna_new.txt > tree/domain_Cdna_new.aln.fa
@@ -652,8 +659,8 @@ fasttree -nt tree/domain_Cdna_new.trim.fa > tree/fasttree/domain_Cdna_new.nwk
 cd ~/chenxy/Pae_rerun/result
 mkdir -p tree/fasttree/style1
 script=../script/table2itol/table2itol.R
-Rscript ${script} -a -D tree/fasttree/style1 -i strain -l circle1 -w 0.5 domain_dna/domain_Cdna_annotation_header.txt
-Rscript ${script} -a -D tree/fasttree/style1 -i strain -l circle2 -w 0.5 domain_dna/domain_Cdna_annotation_header.txt
+Rscript ${script} -a -D tree/fasttree/style1 -i strain -l Location -w 0.5 domain_dna/domain_Cdna_annotation_header.txt
+Rscript ${script} -a -D tree/fasttree/style1 -i strain -l Type -w 0.5 domain_dna/domain_Cdna_annotation_header.txt
 ```
 
 参数:
@@ -683,6 +690,76 @@ tree/fasttree
   在[iTOL 网站](https://itol.embl.de)注册账号并上传发育树文件`domain_Cdna.condense.nwk`
   打开该树的文件后，将`tree/fasttree/style1`目录中`iTOL_colorstrip-circle1.txt`和`iTOL_colorstrip-circle2.txt`拖进 itol 页面即完成可视化
   最后在`Export`导出
-![fasttree](/pic/fasttree.png "fasttree")
+  ![fasttree](/pic/fasttree.png "fasttree")
 
-## Ka/Ks 计算
+## 6 Ka/Ks 计算
+
+计算 Ka/Ks 需要用到`ParaAT2.0`和`KaKs_Calculator`两个工具。其中需要用到以下三个文件：
+
+> `-h`：同源基因名称文件
+>
+> `-n`：指定核酸序列文件，即`5.4.2`步骤中`重新建树`筛选出的 dna 序列
+>
+> `-a`：指定蛋白序列文件
+
+ps：在`4.2`中提取到了 Cdomain 氨基酸序列，但是同样地，由于注释原因删除了部分核酸序列，因此也要进行重新筛选
+
+### 6.1 准备需要的蛋白序列文件
+
+```shell
+cd ~/chenxy/Pae_rerun/result
+cut -f 1 domain_dna/domain_Cdna_annotation.txt > domain_aa/tmp.txt
+grep -A 1 -f domain_aa/tmp.txt domain_aa/domain_Caa.txt > domain_aa/domain_Caa_new.txt
+sed -e "s/--//g" -e "/^$/d" domain_aa/domain_Caa_new.txt > domain_aa/temp.txt && mv domain_aa/temp.txt domain_aa/domain_Caa_new.txt
+rm domain_aa/tmp.txt
+
+faops size domain_aa/domain_Caa.txt | wc -l
+# 132
+faops size domain_aa/domain_Caa_new.txt | wc -l
+# 121
+# 序列数量减少，确认删除成功。并且序列数量与对应的dna序列数量一致，均为121
+# 成功生成筛选后的蛋白序列文件
+```
+
+### 6.2 准备同源基因名称文件
+
+```shell
+# 先生成gene list
+cd ~/chenxy/Pae_rerun/result
+cut -f 1 domain_dna/domain_Cdna_annotation.txt > domain_dna/domain_Cdna.lst
+
+# 生成一对一对的基因名称文件
+# mapfile命令须在 bash4.0 以上版本中使用
+mapfile -t domains < "domain_dna/domain_Cdna.lst"
+for i in "${!domains[@]}"; do
+    for j in "${!domains[@]}"; do
+        if [ "$i" -lt "$j" ] && [ "${domains[$i]}" != "${domains[$j]}" ]; then
+            echo "${domains[$i]},${domains[$j]}" | sed "s/,/\t/g">> domain_dna/domain_Cdna.homologs
+        fi
+    done
+done
+head -n 5 domain_dna/domain_Cdna.homolog
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_Starter-6-298-1.1-none	Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-1070-1355-1.4-none
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_Starter-6-298-1.1-none	Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-2120-2404-1.7-none
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_Starter-6-298-1.1-none	Paenib_barc_KACC11450_GCF_013347305_1-Condensation_DCL-3703-4002-1.12-none
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_Starter-6-298-1.1-none	Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-4815-5099-1.15-none
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_Starter-6-298-1.1-none	Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-5916-6201-1.18-none
+```
+
+### 6.3 计算 Ka/Ks 值
+
+使用`ParaAT2.0`脚本进行计算，详细用法见`软件安装`中`0.8`部分
+
+```shell
+# 把需要的三个文件复制到同一个文件夹中
+cd ~/chenxy/Pae_rerun/result
+mkdir KaKs
+cp domain_dna/domain_Cdna.homologs domain_aa/domain_Caa_new.txt domain_dna/domain_Cdna_new.txt  KaKs
+# 新建线程数量文件
+touch KaKs/proc
+echo "6" > KaKs/proc
+
+# 计算KaKs
+cd KaKs
+ParaAT.pl -h domain_Cdna.homologs -n domain_Cdna_new.txt -a domain_Caa_new.txt -p proc -m mafft -f axt -g -k -o result_dir
+```
