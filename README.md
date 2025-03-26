@@ -763,3 +763,14 @@ echo "6" > KaKs/proc
 cd KaKs
 ParaAT.pl -h domain_Cdna.homologs -n domain_Cdna_new.txt -a domain_Caa_new.txt -p proc -m mafft -f axt -g -k -o result_dir
 ```
+
+参数：
+ - `-h`：同源基因名称文件
+ - `-n`：指定核酸序列文件
+ - `-a`：指定蛋白序列文件
+ - `-p`：线程数
+ - `-m`：指定比对工具（clusterw2、t_coffee、mafft、muscle 其中一个）
+ - `-g`：去除比对有 gap 的密码子
+ - `-k`：用 KaKs_Calculator 计算 KaKs 值
+ - `-o`：输出结果的目录
+ - `-f`：输出比对文件的格式
