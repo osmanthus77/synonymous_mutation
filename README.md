@@ -579,7 +579,7 @@ fasttree -nt tree/domain_Cdna.trim.fa > tree/fasttree/domain_Cdna.nwk
 
 ### 5.4 对树操作
 
-#### 简化树
+#### 5.4.1 简化树
 
 合并具有相同拓扑结构的子树，减少树的复杂度
 
@@ -588,7 +588,7 @@ cd cd ~/chenxy/Pae_rerun/result
 nw_condense tree/fasttree/domain_Cdna.nwk > tree/fasttree/domain_Cdna.condense.nwk
 ```
 
-#### 可视化
+#### 5.4.2 可视化
 
 先手动生成注释文件，再使用`table2itol`脚本进行可视化
 
@@ -627,6 +627,7 @@ head -n 3 domain_dna/domain_Cdna_annotation_header.txt
 # Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-2120-2404-1.7-none	pmxE|LCL|Location3	LCL
 ```
 
+- 重新建树
 由于注释过程中，存在部分菌株 bgc 中预测的 polymyxin 的 nrps 基因多于 mibig 库中，在手动注释时删除这部分内容，如下图：
 ![zhushishanchu](/pic/注释删除.png "zhushishanchu")
 图中，`Query`部分为菌株 bgc 与 mibig 数据库中已知 nrps 基因比对，其中有灰色线条连接部分才是菌株 bgc 中有关 polymyxin 的 nprs 基因，但在`4.1`的提取过程中左边三个无关的红色基因同样也提取出来了，因此需要删除这部分 C 域的序列后重新建树。
