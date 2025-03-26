@@ -587,13 +587,101 @@ fasttree -nt tree/domain_Cdna.trim.fa > tree/fasttree/domain_Cdna.nwk
 cd cd ~/chenxy/Pae_rerun/result
 nw_condense tree/fasttree/domain_Cdna.nwk > tree/fasttree/domain_Cdna.condense.nwk
 ```
-#### 可视化
-使用`table2itol`脚本进行可视化
-```shell
-cd cd ~/chenxy/Pae_rerun/result
-cat domain_dna/domain_Cdna.txt | grep ">" | sed "s/^>//g" > domain_dna/domain_Cdna_strain.txt
 
+#### 可视化
+
+先手动生成注释文件，再使用`table2itol`脚本进行可视化
+
+- 生成注释文件
+
+```shell
+# 提取发育树节点名称
+cd ~/chenxy/Pae_rerun/result
+cat domain_dna/domain_Cdna.txt | grep ">" | sed "s/^>//g" > domain_dna/domain_Cdna_strain.txt
+head -n 3 domain_dna/domain_Cdna_strain.txt
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_Starter-6-298-1.1-none
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-1070-1355-1.4-none
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-2120-2404-1.7-none
+
+
+# 手动注释
+# 对domain_Cdna_strain.txt中 Cdomain 手动筛选对应菌株antismash结果index.html文件中polymyxin基因、C域类型、C域在每个基因中的位置
+# 得到文件domain_Cdna_annotate.txt
+head -n 3 domain_dna/domain_Cdna_annotate.txt
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_Starter-6-298-1.1-none	pmxE|C_Starter
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-1070-1355-1.4-none	pmxE|LCL|Location2
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-2120-2404-1.7-none	pmxE|LCL|Location3
+
+
+# 再注释C域类型（C_Starter、LCL、DCL）
+tsv-select -f 2 domain_dna/domain_Cdna_annotate.txt | cut -d "|" -f 2 > domain_dna/temp.txt
+paste domain_dna/domain_Cdna_annotate.txt domain_dna/temp.txt > domain_dna/domain_Cdna_annotation.txt
+# 加上haeder
+awk 'BEGIN {print "strain\tcircle1\tcircle2"} {print}' domain_dna/domain_Cdna_annotation.txt > domain_dna/domain_Cdna_annotation_header.txt
+
+# domain_Cdna_annotation_header.txt即为后续用到的注释文件
+head -n 3 domain_dna/domain_Cdna_annotation_header.txt
+# strain	circle1	circle2
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_Starter-6-298-1.1-none	pmxE|C_Starter	C_Starter
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-1070-1355-1.4-none	pmxE|LCL|Location2	LCL
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-2120-2404-1.7-none	pmxE|LCL|Location3	LCL
 ```
 
+由于注释过程中，存在部分菌株 bgc 中预测的 polymyxin 的 nrps 基因多于 mibig 库中，在手动注释时删除这部分内容，如下图：
+![zhushishanchu](/pic/注释删除.png "zhushishanchu")
+图中，`Query`部分为菌株 bgc 与 mibig 数据库中已知 nrps 基因比对，其中有灰色线条连接部分才是菌株 bgc 中有关 polymyxin 的 nprs 基因，但在`4.1`的提取过程中左边三个无关的红色基因同样也提取出来了，因此需要删除这部分 C 域的序列后重新建树。
+
+```shell
+# 删除得到正确的Cdomain 序列
+cd ~/chenxy/Pae_rerun/result
+cut -f 1 domain_dna/domain_Cdna_annotation.txt > domain_dna/tmp.txt
+grep -A 1 -f domain_dna/tmp.txt domain_dna/domain_Cdna.txt > domain_dna/domain_Cdna_new.txt
+sed -e "s/--//g" -e "/^$/d" domain_dna/domain_Cdna_new.txt > domain_dna/temp.txt && mv domain_dna/temp.txt domain_dna/domain_Cdna_new.txt
+rm domain_dna/tmp.txt
+
+# 重新建树
+mafft --auto domain_dna/domain_Cdna_new.txt > tree/domain_Cdna_new.aln.fa
+trimal -in tree/domain_Cdna_new.aln.fa -out tree/domain_Cdna_new.trim.fa -automated1
+fasttree -nt tree/domain_Cdna_new.trim.fa > tree/fasttree/domain_Cdna_new.nwk
+```
+
+- 使用`table2itol`脚本
+
+```shell
+cd ~/chenxy/Pae_rerun/result
+mkdir -p tree/fasttree/style1
+script=../script/table2itol/table2itol.R
+Rscript ${script} -a -D tree/fasttree/style1 -i strain -l circle1 -w 0.5 domain_dna/domain_Cdna_annotation_header.txt
+Rscript ${script} -a -D tree/fasttree/style1 -i strain -l circle2 -w 0.5 domain_dna/domain_Cdna_annotation_header.txt
+```
+
+参数:
+
+> `-a`：表示如果找不到输入列，则程序会终止运行（默认情况下不会执行）
+>
+> `-D`：指定输出目录
+>
+> `-i`：指定发育树叶片节点的名称，即注释文件中第一列
+>
+> `-l`：指定注释信息的名称，即注释文件的第二列 or 第三列
+
+最终在`tree/fasttree/style1`目录下得到`circle1的`两个文件和`circle2`的两个文件，文件结构如下：
+
+```shell
+tree/fasttree
+├── domain_Cdna.condense.nwk
+├── domain_Cdna.nwk
+└── style1
+    ├── iTOL_colorstrip-circle1.txt
+    ├── iTOL_colorstrip-circle2.txt
+    ├── iTOL_labels-circle1.txt
+    └── iTOL_labels-circle2.txt
+```
+
+- iTOL 可视化
+  在[iTOL 网站](https://itol.embl.de)注册账号并上传发育树文件`domain_Cdna.condense.nwk`
+  打开该树的文件后，将`tree/fasttree/style1`目录中`iTOL_colorstrip-circle1.txt`和`iTOL_colorstrip-circle2.txt`拖进 itol 页面即完成可视化
+  最后在`Export`导出
+![fasttree](/pic/fasttree.png "fasttree")
 
 ## Ka/Ks 计算
