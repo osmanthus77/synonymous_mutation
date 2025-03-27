@@ -101,7 +101,7 @@ brew install triaml
 brew install fasttree
 ```
 
-### iqtree v1.6.12
+#### iqtree v1.6.12
 
 ```shell
 brew install iqtree
@@ -424,7 +424,7 @@ for i in $(cat product/example_polymyxin.tsv | sed "s/\t/,/g"); do
 done
 ```
 
-提取 domain 后`txt`文件修改格式并筛选特定的 domain，以 C 域为例；
+提取 domain 后`txt`文件修改格式并筛选特定的 domain，以 C 域为例；     
 ！注意：筛选特定 domain 时，要用 domain 全称，如下表
 | domain 简称 | domain 全称 |
 |:----------:|--------------|
@@ -628,10 +628,10 @@ head -n 3 domain_dna/domain_Cdna_annotation_header.txt
 # Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-2120-2404-1.7-none	pmxE|LCL|Location3	LCL
 ```
 
-- 重新建树
-  由于注释过程中，存在部分菌株 bgc 中预测的 polymyxin 的 nrps 基因多于 mibig 库中，在手动注释时删除这部分内容，如下图：
-  ![zhushishanchu](/pic/注释删除.png "zhushishanchu")
-  图中，`Query`部分为菌株 bgc 与 mibig 数据库中已知 nrps 基因比对，其中有灰色线条连接部分才是菌株 bgc 中有关 polymyxin 的 nprs 基因，但在`4.1`的提取过程中左边三个无关的红色基因同样也提取出来了，因此需要删除这部分 C 域的序列后重新建树。
+- **重新建树**
+由于注释过程中，存在部分菌株 bgc 中预测的 polymyxin 的 nrps 基因多于 mibig 库中，在手动注释时删除这部分内容，如下图：
+![zhushishanchu](/pic/注释删除.png "zhushishanchu")
+图中，`Query`部分为菌株 bgc 与 mibig 数据库中已知 nrps 基因比对，其中有灰色线条连接部分才是菌株 bgc 中有关 polymyxin 的 nprs 基因，但在`4.1`的提取过程中左边三个无关的红色基因同样也提取出来了，因此需要删除这部分 C 域的序列后重新建树。
 
 ```shell
 # 删除得到正确的Cdomain 序列
@@ -687,10 +687,13 @@ tree/fasttree
 ```
 
 - iTOL 可视化
-  在[iTOL 网站](https://itol.embl.de)注册账号并上传发育树文件`domain_Cdna.condense.nwk`
-  打开该树的文件后，将`tree/fasttree/style1`目录中`iTOL_colorstrip-circle1.txt`和`iTOL_colorstrip-circle2.txt`拖进 itol 页面即完成可视化
-  最后在`Export`导出
-  ![fasttree](/pic/fasttree.png "fasttree")
+
+> 在[iTOL 网站](https://itol.embl.de)注册账号并上传发育树文件`domain_Cdna.condense.nwk`
+> 
+> 打开该树的文件后，将`tree/fasttree/style1`目录中`iTOL_colorstrip-circle1.txt`和`iTOL_colorstrip-circle2.txt`拖进 itol 页面即完成可视化
+> 
+> 最后在`Export`导出
+![fasttree](/pic/fasttree.png "fasttree")
 
 ## 6 Ka/Ks 计算
 
@@ -702,7 +705,7 @@ tree/fasttree
 >
 > `-a`：指定蛋白序列文件
 
-ps：在`4.2`中提取到了 Cdomain 氨基酸序列，但是同样地，由于注释原因删除了部分核酸序列，因此也要进行重新筛选
+ps：在`4.2`中提取到了 Cdomain 氨基酸序列，但是同样地，由于注释原因删除了部分核酸序列，因此之前提取的氨基酸序列也要进行重新筛选
 
 ### 6.1 准备需要的蛋白序列文件
 
