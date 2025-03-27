@@ -424,7 +424,7 @@ for i in $(cat product/example_polymyxin.tsv | sed "s/\t/,/g"); do
 done
 ```
 
-提取 domain 后`txt`文件修改格式并筛选特定的 domain，以 C 域为例；     
+提取 domain 后`txt`文件修改格式并筛选特定的 domain，以 C 域为例；  
 ！注意：筛选特定 domain 时，要用 domain 全称，如下表
 | domain 简称 | domain 全称 |
 |:----------:|--------------|
@@ -629,9 +629,9 @@ head -n 3 domain_dna/domain_Cdna_annotation_header.txt
 ```
 
 - **重新建树**
-由于注释过程中，存在部分菌株 bgc 中预测的 polymyxin 的 nrps 基因多于 mibig 库中，在手动注释时删除这部分内容，如下图：
-![zhushishanchu](/pic/注释删除.png "zhushishanchu")
-图中，`Query`部分为菌株 bgc 与 mibig 数据库中已知 nrps 基因比对，其中有灰色线条连接部分才是菌株 bgc 中有关 polymyxin 的 nprs 基因，但在`4.1`的提取过程中左边三个无关的红色基因同样也提取出来了，因此需要删除这部分 C 域的序列后重新建树。
+  由于注释过程中，存在部分菌株 bgc 中预测的 polymyxin 的 nrps 基因多于 mibig 库中，在手动注释时删除这部分内容，如下图：
+  ![zhushishanchu](/pic/注释删除.png "zhushishanchu")
+  图中，`Query`部分为菌株 bgc 与 mibig 数据库中已知 nrps 基因比对，其中有灰色线条连接部分才是菌株 bgc 中有关 polymyxin 的 nprs 基因，但在`4.1`的提取过程中左边三个无关的红色基因同样也提取出来了，因此需要删除这部分 C 域的序列后重新建树。
 
 ```shell
 # 删除得到正确的Cdomain 序列
@@ -689,11 +689,11 @@ tree/fasttree
 - iTOL 可视化
 
 > 在[iTOL 网站](https://itol.embl.de)注册账号并上传发育树文件`domain_Cdna.condense.nwk`
-> 
+>
 > 打开该树的文件后，将`tree/fasttree/style1`目录中`iTOL_colorstrip-circle1.txt`和`iTOL_colorstrip-circle2.txt`拖进 itol 页面即完成可视化
-> 
+>
 > 最后在`Export`导出
-![fasttree](/pic/fasttree.png "fasttree")
+> ![fasttree](/pic/fasttree.png "fasttree")
 
 ## 6 Ka/Ks 计算
 
@@ -707,7 +707,9 @@ tree/fasttree
 
 ps：在`4.2`中提取到了 Cdomain 氨基酸序列，但是同样地，由于注释原因删除了部分核酸序列，因此之前提取的氨基酸序列也要进行重新筛选
 
-### 6.1 准备需要的蛋白序列文件
+### 6.1 准备需要的核酸和蛋白序列文件
+
+#### 6.1.1 Cdomain 氨基酸序列筛选
 
 ```shell
 cd ~/chenxy/Pae_rerun/result
@@ -724,56 +726,139 @@ faops size domain_aa/domain_Caa_new.txt | wc -l
 # 成功生成筛选后的蛋白序列文件
 ```
 
+#### 6.1.2 将 C domain 序列按位置 Location 拆分为 10 文件
+
+Polymyxin 多粘菌素为十个氨基酸组成的多肽，其 NRPS 模块为十个，其菌株 BGCs 中 C domain 分别位于基因 pmxA 和 pmxE 上，一共十个 C domain，也就是有十个 Location。在此，进行 KaKs 需要以下两个维度进行计算：
+
+> 同一个 BGC 内：某一条特定菌株 BGC 中，计算十个 Location 上的 Cdomain 两两之间的 KaKs
+>
+> 同一个 Location：针对某一个特定 Location，计算所有菌株 BGC 中该 Location 上的 Cdomain 两两之间的 KaKs
+
+因此，需要先根据注释文件中 Cdomai 信息（基因、类型、位置，如`pmxE|LCL|Location2`），以基因和位置为依据，进行拆分，十个位置拆分为十个文件
+
+- 先生成位置文件 lst
+
+```shell
+# 先生成位置文件lst
+cd  ~/chenxy/Pae_rerun/result
+mkdir KaKs
+cut -f 2 domain_dna/domain_Cdna_annotation.txt | sort | uniq > KaKs/10_Location.lst
+# pmxA|DCL|Location1
+# pmxA|LCL|Location2
+# pmxA|LCL|Location3
+# pmxA|LCL|Location4
+# pmxE|C_Starter
+# pmxE|DCL|Location4
+# pmxE|LCL|Location2
+# pmxE|LCL|Location3
+# pmxE|LCL|Location4
+# pmxE|LCL|Location5
+# pmxE|LCL|Location6
+# 手动修改10_Location.lst内容，将Location4的Cdomain两种类型DCL和LCL合并
+```
+
+- 按照Location拆分完整的核酸和蛋白序列文件为10个Location序列文件
+
+```shell
+# 先将注释文件拆分为十个文件
+cd  ~/chenxy/Pae_rerun/result
+mkdir KaKs/location
+for location in $(cat KaKs/10_Location.lst); do
+    cat domain_dna/domain_Cdna_annotation.txt | 
+    grep "${location}" > KaKs/location/${location}.lst
+done
+# 删除十个文件中的C domain相关信息，只保留第一列名称
+for location in $(cat KaKs/10_Location.lst); do
+    cut -f 1 KaKs/location/${location}.lst > KaKs/${location}_tmp.txt;
+    mv KaKs/${location}_tmp.txt KaKs/location/${location}.lst;
+done
+
+# 拆分核酸序列
+mkdir KaKs/Cdna_fasta
+for location in $(cat KaKs/10_Location.lst); do
+    grep -A 1 -f KaKs/${location}_tmp.txt domain_dna/domain_Cdna_new.txt >> KaKs/Cdna_fasta/${location}_Cdna.fa;
+    sed -e "s/--//g" -e "/^$/d" KaKs/Cdna_fasta/${location}_Cdna.fa > KaKs/${location}_temp.txt && mv KaKs/${location}_temp.txt KaKs/Cdna_fasta/${location}_Cdna.fa;
+done
+
+# 拆分氨基酸序列
+mkdir KaKs/Caa_fasta
+for location in $(cat KaKs/10_Location.lst); do
+    grep -A 1 -f KaKs/${location}_tmp.txt domain_aa/domain_Caa_new.txt >> KaKs/Caa_fasta/${location}_Caa.fa;
+    sed -e "s/--//g" -e "/^$/d" KaKs/Caa_fasta/${location}_Caa.fa > KaKs/${location}_temp.txt && mv KaKs/${location}_temp.txt KaKs/Caa_fasta/${location}_Caa.fa;
+done
+
+# 确认核酸和氨基酸序列数量与lst文件相同
+faops size KaKs/domain_Cdna/pmxA\|DCL\|Location1_Cdna.fa | wc -l
+# 12
+faops size KaKs/domain_Caa/pmxA\|DCL\|Location1_Caa.fa | wc -l
+# 12
+cat KaKa/location/pmxA\|DCL\|Location1.lst | wc -l
+# 12
+
+
+# 合并Location4的Cdomain两种类型DCL和LCL的 氨基酸序列 和 核酸序列
+cd  ~/chenxy/Pae_rerun/result/KaKs/Cdna_fasta
+cat "pmxE|DCL|Location4_Cdna.fa" "pmxE|LCL|Location4_Cdna.fa" > "pmxE|C|Location4_Cdna.fa"
+
+cd  ~/chenxy/Pae_rerun/result/KaKs/Caa_fasta
+cat "pmxE|DCL|Location4_Caa.fa" "pmxE|LCL|Location4_Caa.fa" > "pmxE|C|Location4_Caa.fa"
+```
+
+
 ### 6.2 准备同源基因名称文件
 
 ```shell
-# 先生成gene list
-cd ~/chenxy/Pae_rerun/result
-cut -f 1 domain_dna/domain_Cdna_annotation.txt > domain_dna/domain_Cdna.lst
-
 # 生成一对一对的基因名称文件
 # mapfile命令须在 bash4.0 以上版本中使用
-mapfile -t domains < "domain_dna/domain_Cdna.lst"
-for i in "${!domains[@]}"; do
-    for j in "${!domains[@]}"; do
-        if [ "$i" -lt "$j" ] && [ "${domains[$i]}" != "${domains[$j]}" ]; then
-            echo "${domains[$i]},${domains[$j]}" | sed "s/,/\t/g">> domain_dna/domain_Cdna.homologs
-        fi
+cd ~/chenxy/Pae_rerun/result/KaKs
+mkdir homologs
+for location in $(cat 10_Location.lst); do
+    mapfile -t domains < "location/${location}.lst"
+    > homologs/${location}.homologs
+    for i in "${!domains[@]}"; do
+        for j in "${!domains[@]}"; do
+            if [ "$i" -lt "$j" ] && [ "${domains[$i]}" != "${domains[$j]}" ]; then
+            echo "${domains[$i]},${domains[$j]}" | sed "s/,/\t/g">> homologs/${location}.homologs
+            fi
+        done
     done
 done
-head -n 5 domain_dna/domain_Cdna.homolog
-# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_Starter-6-298-1.1-none	Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-1070-1355-1.4-none
-# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_Starter-6-298-1.1-none	Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-2120-2404-1.7-none
-# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_Starter-6-298-1.1-none	Paenib_barc_KACC11450_GCF_013347305_1-Condensation_DCL-3703-4002-1.12-none
-# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_Starter-6-298-1.1-none	Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-4815-5099-1.15-none
-# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_Starter-6-298-1.1-none	Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-5916-6201-1.18-none
+head -n 5 homologs/pmxA\|DCL\|Location1.homologs
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_DCL-1320-1619-3.5-none	Paenib_dendri_2022CK_00834_GCF_029952845_1-Condensation_DCL-1337-1636-2.5-none
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_DCL-1320-1619-3.5-none	Paenib_dendri_J27TS7_GCF_021654795_1-Condensation_DCL-1322-1621-3.5-none
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_DCL-1320-1619-3.5-none	Paenib_lentus_DSM_25539_GCF_003931855_1-Condensation_DCL-1304-1603-2.5-none
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_DCL-1320-1619-3.5-none	Paenib_peo_ZBSF16_GCF_022531965_1-Condensation_DCL-1335-1634-3.5-none
+# Paenib_barc_KACC11450_GCF_013347305_1-Condensation_DCL-1320-1619-3.5-none	Paenib_peo_ZF390_GCF_014692735_1-Condensation_DCL-1335-1634-10.5-none
 ```
+
 
 ### 6.3 计算 Ka/Ks 值
 
 使用`ParaAT2.0`脚本进行计算，详细用法见`软件安装`中`0.8`部分
 
 ```shell
-# 把需要的三个文件复制到同一个文件夹中
-cd ~/chenxy/Pae_rerun/result
-mkdir KaKs
-cp domain_dna/domain_Cdna.homologs domain_aa/domain_Caa_new.txt domain_dna/domain_Cdna_new.txt  KaKs
+cd ~/chenxy/Pae_rerun/result/KaKs
 # 新建线程数量文件
-touch KaKs/proc
-echo "6" > KaKs/proc
+touch proc
+echo "6" > proc
 
 # 计算KaKs
-cd KaKs
-ParaAT.pl -h domain_Cdna.homologs -n domain_Cdna_new.txt -a domain_Caa_new.txt -p proc -m mafft -f axt -g -k -o result_dir
+for location in $(cat 10_Location.lst); do
+    homologs=homologs/${location}.homologs;
+    dna=Cdna_fasta/${location}_Cdna.cds;
+    aa=Caa_fasta/${location}_Caa.pep;
+    ParaAT.pl -h ${homologs} -n ${dna} -a ${aa} -p proc -m mafft -f axt -g -k -o ${location}_result_dir
+done
 ```
 
 参数：
- - `-h`：同源基因名称文件
- - `-n`：指定核酸序列文件
- - `-a`：指定蛋白序列文件
- - `-p`：线程数
- - `-m`：指定比对工具（clusterw2、t_coffee、mafft、muscle 其中一个）
- - `-g`：去除比对有 gap 的密码子
- - `-k`：用 KaKs_Calculator 计算 KaKs 值
- - `-o`：输出结果的目录
- - `-f`：输出比对文件的格式
+
+- `-h`：同源基因名称文件
+- `-n`：指定核酸序列文件
+- `-a`：指定蛋白序列文件
+- `-p`：线程数文件
+- `-m`：指定比对工具（clusterw2、t_coffee、mafft、muscle 其中一个）
+- `-g`：去除比对有 gap 的密码子
+- `-k`：用 KaKs_Calculator 计算 KaKs 值
+- `-o`：输出结果的目录
+- `-f`：输出比对文件的格式
