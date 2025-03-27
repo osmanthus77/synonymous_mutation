@@ -754,7 +754,18 @@ cut -f 2 domain_dna/domain_Cdna_annotation.txt | sort | uniq > KaKs/10_Location.
 # pmxE|LCL|Location4
 # pmxE|LCL|Location5
 # pmxE|LCL|Location6
-# 手动修改10_Location.lst内容，将Location4的Cdomain两种类型DCL和LCL合并
+# 手动修改10_Location.lst内容，将Location4的Cdomain两种类型DCL和LCL合并，并删除两种类型
+
+# pmxA|DCL|Location1
+# pmxA|LCL|Location2
+# pmxA|LCL|Location3
+# pmxA|LCL|Location4
+# pmxE|C_Starter
+# pmxE|C|Location4
+# pmxE|LCL|Location2
+# pmxE|LCL|Location3
+# pmxE|LCL|Location5
+# pmxE|LCL|Location6
 ```
 
 - 按照Location拆分完整的核酸和蛋白序列文件为10个Location序列文件
@@ -767,23 +778,23 @@ for location in $(cat KaKs/10_Location.lst); do
     cat domain_dna/domain_Cdna_annotation.txt | 
     grep "${location}" > KaKs/location/${location}.lst
 done
-# 删除十个文件中的C domain相关信息，只保留第一列名称
+# 删除十个文件中的C domain注释信息，只保留第一列名称
 for location in $(cat KaKs/10_Location.lst); do
     cut -f 1 KaKs/location/${location}.lst > KaKs/${location}_tmp.txt;
     mv KaKs/${location}_tmp.txt KaKs/location/${location}.lst;
 done
 
-# 拆分核酸序列
+# 根据locaotion.lst文件 拆分核酸序列
 mkdir KaKs/Cdna_fasta
 for location in $(cat KaKs/10_Location.lst); do
-    grep -A 1 -f KaKs/${location}_tmp.txt domain_dna/domain_Cdna_new.txt >> KaKs/Cdna_fasta/${location}_Cdna.fa;
+    grep -A 1 -f KaKs/location/${location}.lst domain_dna/domain_Cdna_new.txt >> KaKs/Cdna_fasta/${location}_Cdna.fa;
     sed -e "s/--//g" -e "/^$/d" KaKs/Cdna_fasta/${location}_Cdna.fa > KaKs/${location}_temp.txt && mv KaKs/${location}_temp.txt KaKs/Cdna_fasta/${location}_Cdna.fa;
 done
 
-# 拆分氨基酸序列
+# 根据locaotion.lst文件 拆分氨基酸序列
 mkdir KaKs/Caa_fasta
 for location in $(cat KaKs/10_Location.lst); do
-    grep -A 1 -f KaKs/${location}_tmp.txt domain_aa/domain_Caa_new.txt >> KaKs/Caa_fasta/${location}_Caa.fa;
+    grep -A 1 -f KaKs/location/${location}.lst domain_aa/domain_Caa_new.txt >> KaKs/Caa_fasta/${location}_Caa.fa;
     sed -e "s/--//g" -e "/^$/d" KaKs/Caa_fasta/${location}_Caa.fa > KaKs/${location}_temp.txt && mv KaKs/${location}_temp.txt KaKs/Caa_fasta/${location}_Caa.fa;
 done
 
@@ -795,13 +806,6 @@ faops size KaKs/domain_Caa/pmxA\|DCL\|Location1_Caa.fa | wc -l
 cat KaKa/location/pmxA\|DCL\|Location1.lst | wc -l
 # 12
 
-
-# 合并Location4的Cdomain两种类型DCL和LCL的 氨基酸序列 和 核酸序列
-cd  ~/chenxy/Pae_rerun/result/KaKs/Cdna_fasta
-cat "pmxE|DCL|Location4_Cdna.fa" "pmxE|LCL|Location4_Cdna.fa" > "pmxE|C|Location4_Cdna.fa"
-
-cd  ~/chenxy/Pae_rerun/result/KaKs/Caa_fasta
-cat "pmxE|DCL|Location4_Caa.fa" "pmxE|LCL|Location4_Caa.fa" > "pmxE|C|Location4_Caa.fa"
 ```
 
 
