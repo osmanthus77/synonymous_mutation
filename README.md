@@ -703,7 +703,8 @@ tree/fasttree
 > 打开该树的文件后，将`tree/fasttree/style1`目录中`iTOL_colorstrip-circle1.txt`和`iTOL_colorstrip-circle2.txt`拖进 itol 页面即完成可视化
 >
 > 最后在`Export`导出
-> ![fasttree](/pic/fasttree.png "fasttree")
+
+![fasttree](/pic/fasttree.png "fasttree")
 
 ## 6 Ka/Ks 计算
 
@@ -1006,3 +1007,5 @@ plot <- pheatmap(
 
 # "navy"
 ```
+结果如图：
+![freq_heatmap_Cdomain](/pic/freq_heatmap_Cdomain.png 'freq_heatmap_Cdomain')
