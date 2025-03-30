@@ -234,7 +234,7 @@ done
 
 ### 3.2 提取 antismash 结果 html 中产物信息
 
-- **基于 overview-table 得到所有产物信息**
+#### 3.2.1 基于 overview-table 得到所有产物信息
 
 从`region.html`文件中提取`overview`表格的 html 信息，得到每个菌株的原始文件`raw.tsv`，并修改其格式（调整到与 html 界面中 overview table 一致）。最终得到所有菌株的全部产物信息
 
@@ -283,7 +283,7 @@ done
 # Paenib_polym_M1_GCF_000237325_1_cluster3	transAT-PKSNRPS	1068969	1146361
 ```
 
-- 提取 overview 表格中产物的 mibig 信息
+#### 3.2.2 提取 overview 表格中产物的 mibig 信息
 
 从`region.html`文件中提取`overview`表格中提取预测产物的 mibig 参考信息，即 MIBiG 数据库中 BGC 编号
 
@@ -340,7 +340,7 @@ cat mibig/mibig.tsv |
 ## BGC0002653_                "compound": "macolacin"
 ```
 
-- 基于 overview 和 mibig 信息筛选产物 polymyxin
+#### 3.2.3 基于 overview 和 mibig 信息筛选产物 polymyxin
 
 合并 overview 文件和 mibig 文件，筛选预测相似度高于 50%部分，并筛选预测产物为 polymyxin 的。再将筛选到的菌株的 antismash 结果拷贝过来
 
