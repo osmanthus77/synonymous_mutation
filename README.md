@@ -177,6 +177,16 @@ ParaAT.pl -h test.homologs -n test.cds -a test.pep -p proc -m mafft -f axt -g -k
 - `-o`：输出结果的目录
 - `-f`：输出比对文件的格式
 
+### R 包
+
+```R
+# pheatmap v1.0.12
+# readr v2.1.5
+# dplyr v1.1.4
+
+install.packages(c("pheatmap", "readr", "dplyr"))
+```
+
 ## 1 下载数据
 
 根据 https://github.com/wang-q/genomes/blob/main/groups/Bacillus.md#species-with-assemblies 下载得到类芽孢杆菌 Paenibacillaceae 基因组序列(genbank 文件)，分为有 species 分类和无 species 分类，分别为 complete_taxon、complete_untaxon
@@ -768,14 +778,14 @@ cut -f 2 domain_dna/domain_Cdna_annotation.txt | sort | uniq > KaKs/10_Location.
 # pmxE|LCL|Location6
 ```
 
-- 按照Location拆分完整的核酸和蛋白序列文件为10个Location序列文件
+- 按照 Location 拆分完整的核酸和蛋白序列文件为 10 个 Location 序列文件
 
 ```shell
 # 先将注释文件拆分为十个文件
 cd  ~/chenxy/Pae_rerun/result
 mkdir KaKs/location
 for location in $(cat KaKs/10_Location.lst); do
-    cat domain_dna/domain_Cdna_annotation.txt | 
+    cat domain_dna/domain_Cdna_annotation.txt |
     grep "${location}" > KaKs/location/${location}.lst
 done
 # 删除十个文件中的C domain注释信息，只保留第一列名称
@@ -808,7 +818,6 @@ cat KaKa/location/pmxA\|DCL\|Location1.lst | wc -l
 
 ```
 
-
 ### 6.2 准备同源基因名称文件
 
 ```shell
@@ -834,7 +843,6 @@ head -n 5 homologs/pmxA\|DCL\|Location1.homologs
 # Paenib_barc_KACC11450_GCF_013347305_1-Condensation_DCL-1320-1619-3.5-none	Paenib_peo_ZBSF16_GCF_022531965_1-Condensation_DCL-1335-1634-3.5-none
 # Paenib_barc_KACC11450_GCF_013347305_1-Condensation_DCL-1320-1619-3.5-none	Paenib_peo_ZF390_GCF_014692735_1-Condensation_DCL-1335-1634-10.5-none
 ```
-
 
 ### 6.3 计算 Ka/Ks 值
 
@@ -866,3 +874,135 @@ done
 - `-k`：用 KaKs_Calculator 计算 KaKs 值
 - `-o`：输出结果的目录
 - `-f`：输出比对文件的格式
+
+### 6.4 统计分析
+
+上一步骤中计算 KaKs 输出目录中，包含两类文件，一个是包含比对计算的两个 Cdomain 的核酸序列、另一个是这两个 Cdomain 计算结果，其内容如下：
+
+```
+Sequence	Method	Ka	Ks	Ka/Ks	P-Value(Fisher)	Length	S-Sites	N-Sites	Fold-Sites(0:2:4)	Substitutions	Syn-Subs	Nonsyn-Subs	Fold-Syn-Subs(0:2:4)	Fold-Nonsyn-Subs(0:2:4)	Divergence-Distance	Substitution-Rate-Ratio(rTC:rAG:rTA:rCG:rTG:rCA/rCA)	GC(1:2:3)	ML-Score	AICc	Akaike-Weight	Model
+Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-2371-2655-3.8-none-Paenib_dendri_2022CK_00834_GCF_029952845_1-Condensation_LCL-2400-2684-2.8-none	MA	0.0661559	0.337669	0.195919	1.9645e-17	852	224.486	627.514	NA	95	61.383	33.617	NA	NA	0.137695	4.04176:3.64164:2.62172:2.61015:1.52683:1	0.535211(0.637324:0.339789:0.628521)	-1481.94	NA	NA	NA
+```
+
+一共有两行，第一行是表头，第二行是具体数据，其中第一、四、五列分别为名称、Ks 值、Ka/Ks 比值。在这里，统计分析 Ks 值
+
+#### 6.4.1 提取名称和 Ks 值
+
+首先将结果文件中名称和 Ks 值提取出来生成新文件
+
+```shell
+cd ~/chenxy/Pae_rerun/result/KaKs
+mkdir -p Ks_Cdomain
+
+for location in $(cat 10_Location.lst); do
+    ks_all="${location}";
+    for i in $(ls ${location}_result_dir | grep ".kaks"); do
+        ks=$(cat ${location}_result_dir/${i} | tail -n 1 | cut -f 4);
+        ks_all="${ks_all},${ks}";
+    done
+    echo "${ks_all}" | sed "s/,/\n/g" >> Ks_Cdomain/${location}_ks.tsv
+done
+
+# 将十个文件的 Ks值 合并为一个文件
+cd Ks_Cdomain
+paste *.tsv > Ks_Cdomain_all.tsv
+
+head -n 5 Ks_Cdomain_all.tsv
+# 文件格式
+# pmxA|DCL|Location1	pmxA|LCL|Location2	pmxA|LCL|Location3	pmxA|LCL|Location4	pmxE|C_Starter	pmxE|C|Location4	pmxE|LCL|Location2	pmxE|LCL|Location3	pmxE|LCL|Location5	pmxE|LCL|Location6
+# 0.331552	0.337669	0.455732	0.403827	0.365208	0.359803	0.514165	0.45509	0.497861	0.428051
+# 0.34714	0.358534	0.454202	0.470959	0.436422	0.34094	0.512858	0.473704	0.519772	0.408399
+# 0.486849	0.529026	0.53781	0.429783	0.472441	0.484432	0.659364	0.505616	0.641966	0.507292
+# 0.366262	0.380689	0.427723	0.367751	0.410639	0.34004	0.577856	0.407604	0.496559	0.45796
+
+```
+
+#### 6.4.2 统计频率
+
+```R
+setwd("~/chenxy/Pae_rerun/result/KaKs")
+
+# 加载R包
+library(pheatmap)
+library(readr)
+library(dplyr)
+
+# define function: 将 Ks值[0,1.5]划分为不同区间，统计每个区间的Ks值的频率
+bins_ks_freq <- function(column_data, breaks) {
+    # 过滤NA
+    column_data <- column_data[!is.na(column_data)]
+    # 统计总个数
+    total_count <- length(column_data)
+    # 依据 Ks值的大小分组
+    bins <- cut(column_data, breaks = breaks, include.lowest = TRUE)
+    # 每个分组中元素的频数
+    counts <- table(bins)
+    counts_df <- as.data.frame(counts)
+    colnames(counts_df) <- c("ks_bin", "count")
+    # 每个分组中元素的频率 [0,100]
+    counts_df$count_normolized <- (counts_df$count / total_count)*100
+    return(counts_df)
+}
+
+# data
+# in_df <- read_tsv("3search/6result/5ks/3paml/adomain_site.ks.tsv")
+# in_df <- read_tsv("3search/6result/5ks/3paml/adomain_substrate.ks.tsv")
+# in_df <- read_tsv("3search/6result/5ks/3paml/adomain_branch.ks.tsv")
+# in_df <- read_tsv("3search/6result/5ks/3paml/tdomain_function.ks.tsv")
+# in_df <- read_tsv("3search/6result/5ks/3paml/tdomain_site.ks.tsv")
+# in_df <- read_tsv("3search/6result/5ks/3paml/cdomain_function.ks.tsv")
+# in_df <- read_tsv("3search/6result/5ks/3paml/cdomain_site.ks.tsv")
+# in_df <- read_tsv("3search/6result/5ks/3paml/pmx_site.ks.tsv")
+in_df <- read_tsv("Ks_Cdomain/Ks_Cdomain_all.tsv")
+## 将n/c值全部转变为NA
+in_df[] <- lapply(in_df, function(x) as.numeric(as.character(x)))
+## 删除全为NA的行
+in_df <- in_df[rowSums(is.na(in_df)) < ncol(in_df), ]
+
+# 打印 Ks值 的最小值、最大值和 >1.5的值
+print(max(in_df, na.rm = TRUE))    # 1.79848
+print(min(in_df, na.rm = TRUE))    #  0.00796442
+print(in_df[in_df > 1.5], na.rm = TRUE)
+
+# >1.5的值定义为1.5, 处理前过滤 NA
+in_df[] <- lapply(in_df, function(x) {
+  x[!is.na(x) & x > 1.5] <- 1.5
+  return(x)
+})
+
+# 检查ks值分布 —— 是否存在小于0或大于1.5的值
+all_in_range <- all(in_df >= 0 & in_df <= 1.5, na.rm = TRUE)
+if (all_in_range) {
+  print("YES")
+} else {
+  print("NO")
+}
+
+# breaks
+breaks <- seq(0,1.5, length.out = 61)
+ks_freq_list <- lapply(in_df, bins_ks_freq, breaks = breaks)
+
+# combine
+ks_bins <- ks_freq_list[[1]]$ks_bin
+ks_freq_df <- data.frame(ks_bins = ks_bins)
+for (i in seq_along(ks_freq_list)) {
+    ks_freq_df[[names(in_df)[i]]] <- ks_freq_list[[i]]$count_normolized
+}
+ks_matrix <- as.matrix(ks_freq_df[, -1])
+rownames(ks_matrix) <- ks_freq_df$ks_bin
+
+# plot
+plot <- pheatmap(
+    t(ks_matrix),
+    color = colorRampPalette(c("#ffffff", "#e62d2d"))(60),
+    scale = "none",  # 不进行标准化处理
+    cluster_rows = FALSE, cluster_cols = FALSE,
+    border_color = NA,  # 设置单元格边框颜色
+    fontsize_row = 7, fontsize_col = 7,
+    main = "Ks Heatmap",
+    # display_numbers = TRUE, fontsize_number = 5 # 显示单元格数值
+    cellwidth = 12, cellheight = 18,  # 设置单元格大小
+)
+
+# "navy"
+```
