@@ -1,7 +1,6 @@
 # 同义/非同义突变计算
 
 - 定义：
-
   > 同义突变率 ds/Ks：发生同义突变的位点数目（Ds）与可能发生同义突变的所有位点总数的比值
   >
   > 非同义突变率 dN/Ka：发生非同义突变的位点数目（Dn）与可能发生非同义突变的所有位点总数的比值
@@ -26,6 +25,7 @@
 ```shell
 # 下载安装conda
 mkdir ~/miniconda3
+# 下载链接的安装包为intel Mac版本，可根据自己电脑不同下载其他版本
 curl https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -o ~/miniconda3/miniconda.sh
 bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
 rm ~/miniconda3/miniconda.sh
@@ -41,7 +41,7 @@ conda config --set channel_priority strict
 ```
 
 - 使用`conda`手动安装 antismash
-  参考官方网页 [下载教程](https://docs.antismash.secondarymetabolites.org/install/)
+参考官方网页 [下载教程](https://docs.antismash.secondarymetabolites.org/install/)
 
 ```shell
 # 创建环境、激活
@@ -107,7 +107,7 @@ brew install fasttree
 brew install iqtree
 ```
 
-ps：iqtree 比 fasttree 运行慢，但更加准确
+ps: iqtree 比 fasttree 运行慢，但更加准确
 
 ### 0.5 newick-utils
 
@@ -202,8 +202,14 @@ for level in complete_taxon complete_untaxon; do
     mkdir -p antismas_out/bgc_7.1/Paenibacillaceae/${level}
     find ${level}/gbk/*.gbk |
         xargs baselevel -s .gbk |
-        parallel --colsep '\t' --no-run-if-empty --linebuffer -k -j 1 \
-        "echo {}; antismash --taxon bacteria -c 12 --cb-general --cc-mibig --cb-knownclusters --pfam2go ${level}/gbk/{}.gbk --output-dir antismash_out/bgc_7.1/${level}/{}"
+        parallel --colsep '\t' --no-run-if-empty --linebuffer -k -j 1 "
+            echo {}; antismash \
+                --taxon bacteria -c 12 \
+                --cb-general --cc-mibig \
+                --cb-knownclusters \
+                --pfam2go ${level}/gbk/{}.gbk \
+                --output-dir antismash_out/bgc_7.1/${level}/{}
+            "
 ```
 
 得到结果目录中`region.html`文件：
@@ -224,7 +230,7 @@ for i in Paenibacillaceae; do
     for n in complete_taxon complete_untaxon; do
         find ../bgc_7.1/${i}/${n}  -mindepth 1 -maxdepth 1 -type d  |
             xargs -I {} baselevel {} > strains_raw/strains_${i}_${n}_7.1.lst
-            wc -l strains_raw/strains_${i}_${n}_7.1.lst
+        wc -l strains_raw/strains_${i}_${n}_7.1.lst
     done
 done
 # 输出
@@ -242,16 +248,17 @@ done
 # 得到overview的raw文件
 cd ~/chenxy/Pae_rerun/result
 for level in complete_taxon complete_untaxon ; do
-        for version in 7.1; do
-                raw_dir=product/product_raw/${level}
-                mkdir -p ${raw_dir}
-                for strains in $(cat strains_raw/strains_Paenibacillaceae_${level}_${version}.lst); do
-                        cat ../antismash_out/bgc_${version}/Paenibacillaceae/${level}/${strains}/index.html |
-                                pup 'table.region-table tbody tr td text{}' |
-                                sed 's/Region/|Region/g' |
-                                grep '\S' > ${raw_dir}/${strains}_product_raw.tsv
-                done
+    for version in 7.1; do
+        raw_dir=product/product_raw/${level}
+        mkdir -p ${raw_dir}
+
+        for strains in $(cat strains_raw/strains_Paenibacillaceae_${level}_${version}.lst); do
+            cat ../antismash_out/bgc_${version}/Paenibacillaceae/${level}/${strains}/index.html |
+                pup 'table.region-table tbody tr td text{}' |
+                sed 's/Region/|Region/g' |
+                grep '\S' > ${raw_dir}/${strains}_product_raw.tsv
         done
+    done
 done
 
 # 修改raw文件格式
@@ -259,7 +266,7 @@ mkdir -p  product/product_whole
 for level in complete_taxon complete_untaxon ; do
 	for version in 7.1; do
 		for strains in $(cat strains_raw/strains_Paenibacillaceae_${level}_${version}.lst); do
-        raw_dir=product/product_raw/${level}
+            raw_dir=product/product_raw/${level}
             perl ../script/html.pl ${raw_dir}/${strains}_product_raw.tsv |
                 sed "s/^/${strains}_/g; s/Region /cluster/g" >> product/product_whole/product_whole_bgc_${level}_${version}.tsv
 		done
@@ -328,8 +335,11 @@ wc -l mibig/mibig.tsv   #3013
 
 # 统计其中有关polymyxin的序列
 cat mibig/mibig.tsv |
-    parallel --colsep '\t' --no-run-if-empty --linebuffer -k -j 8 \
-    'cat mibig/mibig/{}.json | grep -i -E "polymyxin|colistin|macolacin" | sed 's/^/{}_/g''
+    parallel --colsep '\t' --no-run-if-empty --linebuffer -k -j 8 '
+        cat mibig/mibig/{}.json | 
+        grep -i -E "polymyxin|colistin|macolacin" | 
+        sed "s/^/{}_/g"
+    '
 
 ## BGC0000408/BGC0001153/BGC0001192/BGC0002653
 ## BGC0000408_                "compound": "polymyxin",
@@ -370,18 +380,18 @@ for level in complete_taxon complete_untaxon; do
     for version in 7.1; do
         cat product/polymyxin_${level}_${version}.tsv |
             cut -f 1 |
-                parallel --colsep '\t' --no-run-if-empty --linebuffer -k -j 8 "
+            parallel --colsep '\t' --no-run-if-empty --linebuffer -k -j 8 "
                 echo {};
                 mkdir -p product//polymyxin_${level}_${version}/{};
                 cp -r ../antismash_out/bgc_${version}/Paenibacillaceae/${level}/{} product/polymyxin_${level}_${version}/
-            "
+                "
     done
 done
 ```
 
 从筛选到 polymyxin 的结果文件中选择部分菌株作为**example**进行后续分析：
 
-```
+```tsv
 example_polymyxin_complete_taxon_7.1.tsv文件内菌株
 
 Paenib_barc_KACC11450_GCF_013347305_1	cluster5
@@ -561,6 +571,7 @@ trimal -in tree/domain_Cdna.aln.fa -out tree/domain_Cdna.trim.fa -automated1
   > 无根树只反应分类单元之间的距离、无祖先问题
   >
   > 有根树反映进化时间顺序，树枝长度可以反应不同基因/蛋白进化方式和进化速率
+
 - 常见算法：
   > 最大似然法(Maximum Likelihood, ML)
   >
@@ -639,9 +650,10 @@ head -n 3 domain_dna/domain_Cdna_annotation_header.txt
 ```
 
 - **重新建树**
-  由于注释过程中，存在部分菌株 bgc 中预测的 polymyxin 的 nrps 基因多于 mibig 库中，在手动注释时删除这部分内容，如下图：
-  ![zhushishanchu](/pic/注释删除.png "zhushishanchu")
-  图中，`Query`部分为菌株 bgc 与 mibig 数据库中已知 nrps 基因比对，其中有灰色线条连接部分才是菌株 bgc 中有关 polymyxin 的 nprs 基因，但在`4.1`的提取过程中左边三个无关的红色基因同样也提取出来了，因此需要删除这部分 C 域的序列后重新建树。
+
+由于注释过程中，存在部分菌株 bgc 中预测的 polymyxin 的 nrps 基因多于 mibig 库中，在手动注释时删除这部分内容，如下图：
+![zhushishanchu](/pic/注释删除.png "zhushishanchu")
+图中，`Query`部分为菌株 bgc 与 mibig 数据库中已知 nrps 基因比对，其中有灰色线条连接部分才是菌株 bgc 中有关 polymyxin 的 nprs 基因，但在`4.1`的提取过程中左边三个无关的红色基因同样也提取出来了，因此需要删除这部分 C 域的序列后重新建树。
 
 ```shell
 # 删除得到正确的Cdomain 序列
@@ -880,7 +892,7 @@ done
 
 上一步骤中计算 KaKs 输出目录中，包含两类文件，一个是包含比对计算的两个 Cdomain 的核酸序列、另一个是这两个 Cdomain 计算结果，其内容如下：
 
-```
+```tsv
 Sequence	Method	Ka	Ks	Ka/Ks	P-Value(Fisher)	Length	S-Sites	N-Sites	Fold-Sites(0:2:4)	Substitutions	Syn-Subs	Nonsyn-Subs	Fold-Syn-Subs(0:2:4)	Fold-Nonsyn-Subs(0:2:4)	Divergence-Distance	Substitution-Rate-Ratio(rTC:rAG:rTA:rCG:rTG:rCA/rCA)	GC(1:2:3)	ML-Score	AICc	Akaike-Weight	Model
 Paenib_barc_KACC11450_GCF_013347305_1-Condensation_LCL-2371-2655-3.8-none-Paenib_dendri_2022CK_00834_GCF_029952845_1-Condensation_LCL-2400-2684-2.8-none	MA	0.0661559	0.337669	0.195919	1.9645e-17	852	224.486	627.514	NA	95	61.383	33.617	NA	NA	0.137695	4.04176:3.64164:2.62172:2.61015:1.52683:1	0.535211(0.637324:0.339789:0.628521)	-1481.94	NA	NA	NA
 ```
