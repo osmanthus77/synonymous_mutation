@@ -1075,7 +1075,9 @@ cat Ks_Cdomain/*.txt >> Ks_Cdomain/Ks_Cdomain.tsv
 nwr plot hh Ks_Cdomain/Ks_Cdomain.tsv -g 2 --bins 40 --xl "" --yl "" --xmm 0,2  -o Ks_plot/Ks_Cdomain.tex 
 
 # 由于名称中含下划线，打开tex文件将 yticklabels 中的 pmxE|C_Starter 修改为 pmxE|C\_Starter
+# tex文件转化为pdf
 tectonic Ks_plot/Ks_Cdomain.tex
+magick -density 600 Ks_plot/Ks_Cdomain.pdf Ks_plot/Ks_Cdomain.png
 ```
 参数：
 > `-g`输入tsv的列数，一般为2
@@ -1089,4 +1091,4 @@ tectonic Ks_plot/Ks_Cdomain.tex
 > `-o`输出文件的名称，默认是stdout
 
 结果如图：
-![heatmap_Cdomain](/pic/Ks_Cdomain.pdf 'heatmap_Cdomain')
+![heatmap_Cdomain](/pic/Ks_Cdomain.png 'heatmap_Cdomain')
