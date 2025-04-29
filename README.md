@@ -187,6 +187,26 @@ ParaAT.pl -h test.homologs -n test.cds -a test.pep -p proc -m mafft -f axt -g -k
 install.packages(c("pheatmap", "readr", "dplyr"))
 ```
 
+### 0.9 nwr
+
+使用rust的包管理器`cargo`从github安装nwr：
+
+```shell
+# 先安装rust及cargo
+curl https://sh.rustup.rs -sSf | sh
+
+# 安装nwr
+cargo install --git https://github.com/wang-q/nwr
+```
+
+### 0.10 tectonic
+
+`tectonic`用于将`.tex`转换为`.psf`，使用`homebrew`进行安装
+
+```shell
+brew install tectonic
+```
+
 ## 1 下载数据
 
 根据 https://github.com/wang-q/genomes/blob/main/groups/Bacillus.md#species-with-assemblies 下载得到类芽孢杆菌 Paenibacillaceae 基因组序列(genbank 文件)，分为有 species 分类和无 species 分类，分别为 complete_taxon、complete_untaxon
@@ -932,6 +952,8 @@ head -n 5 Ks_Cdomain_all.tsv
 
 #### 6.4.2 统计频率
 
+- R包统计
+
 ```R
 setwd("~/chenxy/Pae_rerun/result/KaKs")
 
@@ -1021,3 +1043,50 @@ plot <- pheatmap(
 ```
 结果如图：
 ![freq_heatmap_Cdomain](/pic/freq_heatmap_Cdomain.png 'freq_heatmap_Cdomain')
+
+- `nwr plot hh`统计
+
+[nwr](https://github.com/wang-q/nwr)更新了绘制热图功能，在这里，可以使用另一种方法进行统计
+
+`nwr plot hh`输入文件格式要求为两列，在第二列中分组
+```tsv
+Value	Group
+0.127355	A1
+0.136287	A1
+0.151956	A1
+0.123647	A2
+0.126801	A2
+0.153377	A2
+```
+
+
+```shell
+cd ~/chenxy/Pae_rerun/result/KaKs
+
+# 先生成 nwr plot hh需要的格式
+for location in $(cat 10_Location.lst); do
+    header=$(head -n 1 Ks_Cdomain/${location}_ks.tsv );
+    tail -n +2 Ks_Cdomain/${location}_ks.tsv | 
+        sed "s/$/\t$header/" >> Ks_Cdomain/${location}_ks.txt
+done
+cat Ks_Cdomain/*.txt >> Ks_Cdomain/Ks_Cdomain.tsv
+
+# 生成热图
+nwr plot hh Ks_Cdomain/Ks_Cdomain.tsv -g 2 --bins 40 --xl "" --yl "" --xmm 0,2  -o Ks_plot/Ks_Cdomain.tex 
+
+# 由于名称中含下划线，打开tex文件将 yticklabels 中的 pmxE|C_Starter 修改为 pmxE|C\_Starter
+tectonic Ks_plot/Ks_Cdomain.tex
+```
+参数：
+> `-g`输入tsv的列数，一般为2
+>
+> `--bins`将横坐标区间拆分为多少小区间，默认40
+>
+> `--xl`/`--yl`横纵坐标的名称
+>
+> `--xmm`横坐标的最小值和最大值
+>
+> `-o`输出文件的名称，默认是stdout
+
+结果如图：
+![heatmap_Cdomain](/pic/Ks_Cdomain.pdf 'heatmap_Cdomain')
