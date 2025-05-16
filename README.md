@@ -64,7 +64,8 @@ antismash --prepare-data
 # 输出下面内容则成功安装
 # All prerequisites satisfied
 
-# 用法
+# 运行、用法
+source ~/miniconda3/bin/activate
 conda activate antismash
 antismash my_input.gbk
 ```
